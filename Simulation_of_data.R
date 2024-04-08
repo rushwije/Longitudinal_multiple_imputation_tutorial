@@ -3,11 +3,9 @@
 #          paper titled : "Multiple imputation for longitudinal data: A tutorial" 
 #          Rushani Wijesuriya, Margarita Moreno-Betancur, John B Carlin, Ian R White,
 #          Matteo Quartagno and Katherine J Lee (Senior Author) 
-#          Last updated: 21st  of September 2022
+#          Last updated: 08th of April 2024
 #          Author responsible for the code:  Rushani Wijesuriya    
 ###################################################################################################################
-
-setwd("C:/Users/rushani.wijesuriya/OneDrive - Murdoch Children's Research Institute/Multilevel MI- Tutorial paper/Longitudinal_Tutorial")
 
 rm(list=ls())
 
@@ -18,9 +16,12 @@ library(dplyr)
 library(DataCombine) #for the slide function 
 library(fastDummies) #for creating dummy indicators for the school clusters
 library(mice)
+library(rstudioapi)
+
+#set working directory to working folder
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #set seed
-#set.seed(04052022)
 set.seed(937254)
 
 
@@ -91,16 +92,16 @@ sd_sdqL1 <- 3.0
   D <- D[order(D$c_id),]
   
   #child's age at wave 1
-  D$c_age <- runif((I*J),7,10)
+  D$age <- runif((I*J),7,10)
   
   #Simulate sex (M,F) groups (males=1, females=0)
   D$uran=runif((I*J),0,1)
-  D$c_sex=ifelse(D$uran<=0.5,1,0)
+  D$sex=ifelse(D$uran<=0.5,1,0)
   D$uran=NULL
   
   ##simulate SES values
-  D$c_ses <- sample( 1:5,1200,replace=TRUE, prob=c(0.1, 0.1, 0.2, 0.3 ,0.3) )
-  D$c_ses <- as.factor(D$c_ses)
+  D$ses <- sample( 1:5,1200,replace=TRUE, prob=c(0.1, 0.1, 0.2, 0.3 ,0.3) )
+  D$ses <- as.factor(D$ses)
   
   #Simulate NAPLAN scores at wave 1
   eta0 <- -1.20
@@ -115,12 +116,12 @@ sd_sdqL1 <- 3.0
   e_teacherw1 <- rnorm(N,0,1)
   
   #generate indictor variables for SES and school sector variables
-  D=fastDummies::dummy_cols(D, select_columns =c("c_ses"))
+  D=fastDummies::dummy_cols(D, select_columns =c("ses"))
   
   
   #generate NAPLAN scores at wave 1
-  D$NAPLAN_w1=eta0+eta1*D$c_sex+eta2*D$c_age+eta31*D$c_ses_2 + eta32*D$c_ses_3 + eta33*D$c_ses_4 +
-    eta34*D$c_ses_5 +e_teacherw1
+  D$NAPLAN_w1=eta0+eta1*D$sex+eta2*D$age+eta31*D$ses_2 + eta32*D$ses_3 + eta33*D$ses_4 +
+    eta34*D$ses_5 +e_teacherw1
   
   #generate individual level (Level 2) REs
   D$L2_RE_dep <- rnorm(N,0,sd_depL2)
@@ -145,9 +146,9 @@ sd_sdqL1 <- 3.0
   delta54 <- -0.86
   
   uran <- runif(3600,0,1)
-  D$dep <- ifelse(uran<inv.logit(delta0+delta1*D$c_age+delta2*D$c_sex+delta3*D$NAPLAN_w1+
-                         delta4*D$wave+delta51*D$c_ses_2+delta52*D$c_ses_3+delta53*D$c_ses_4+
-                           delta54*D$c_ses_5+D$L3_RE_dep+D$L2_RE_dep),1,0)
+  D$dep <- ifelse(uran<inv.logit(delta0+delta1*D$age+delta2*D$sex+delta3*D$NAPLAN_w1+
+                         delta4*D$wave+delta51*D$ses_2+delta52*D$ses_3+delta53*D$ses_4+
+                           delta54*D$ses_5+D$L3_RE_dep+D$L2_RE_dep),1,0)
   
   #check
   D$dep <- as.factor(D$dep)
@@ -181,8 +182,8 @@ sd_sdqL1 <- 3.0
   gamma6 <- -0.01
   gamma7 <- -0.01
   e_NAPLAN <- rnorm(3600,0,sd_NAPLANL1)
-  D$NAPLAN <- gamma0+gamma1*(as.numeric(D$prev_dep)-1)+gamma2*D$c_age+gamma3*D$c_sex+gamma4*D$NAPLAN_w1+gamma51*D$c_ses_2+
-    gamma52*D$c_ses_3+gamma53*D$c_ses_4+gamma54*D$c_ses_5+
+  D$NAPLAN <- gamma0+gamma1*(as.numeric(D$prev_dep)-1)+gamma2*D$age+gamma3*D$sex+gamma4*D$NAPLAN_w1+gamma51*D$ses_2+
+    gamma52*D$ses_3+gamma53*D$ses_4+gamma54*D$ses_5+
     gamma6*D$wave+gamma7*D$prev_sdq+D$L3_RE_NAPLAN+ D$L2_RE_NAPLAN+e_NAPLAN
   
   #drop variables
@@ -198,26 +199,16 @@ sd_sdqL1 <- 3.0
     mutate(L2_RE_r_dep = rnorm(1,0,0.05),L2_RE_r_NAPLAN = rnorm(1,0,2.0),L2_RE_r_sdq = rnorm(1,0,1.2) )
   
   #missing data generation in prev_dep
-  D$r_prev_dep <- as.numeric(runif(3600,0,1)<inv.logit(-9.8+0.72*D$c_age+0.16*D$c_sex+(-0.17)*D$NAPLAN_w1+
-                                   (0.20)*(D$wave-1)+(-0.39)*D$c_ses_2+(0.27)*D$c_ses_3+(0.19)*D$c_ses_4+
-                                   (-0.03)*D$c_ses_5+(-0.13)*D$NAPLAN+(0.04)*D$prev_sdq+D$L3_RE_r_dep+D$L2_RE_r_dep))
+  D$r_prev_dep <- as.numeric(runif(3600,0,1)<inv.logit(-9.8+0.72*D$age+0.16*D$sex+(-0.17)*D$NAPLAN_w1+
+                                   (0.20)*(D$wave-1)+(-0.39)*D$ses_2+(0.27)*D$ses_3+(0.19)*D$ses_4+
+                                   (-0.03)*D$ses_5+(-0.13)*D$NAPLAN+(0.04)*D$prev_sdq+D$L3_RE_r_dep+D$L2_RE_r_dep))
   
   D$r_prev_dep <- as.factor(D$r_prev_dep)
-  
-  
-  #missing data generation in prev_sdq
-  # D$r_prev_sdq <- as.numeric(runif(3600,0,1)<inv.logit(-1.5+0.12*D$c_sex+(-0.43)*D$NAPLAN_w1+
-  #                                                        (-0.3)*(D$wave-1)+(-0.08)*D$NAPLAN+(0.14)*D$prev_sdq+
-  #                                                        D$L3_RE_r_sdq+D$L2_RE_r_sdq))
-  # 
-  # D$r_prev_sdq <- as.factor(D$r_prev_sdq)
-  # 
-  # 
 
   #missing data generation in NAPLAN
-  D$r_NAPLAN <- as.numeric(runif(3600,0,1)<inv.logit(-22.8+1.77*D$c_age+0.01*D$c_sex+(-0.70)*D$NAPLAN_w1+
-                                                         (0.7)*D$wave+(-4.9)*D$c_ses_2+(-1.9)*D$c_ses_3+(2.19)*D$c_ses_4+
-                                                         (-2.35)*D$c_ses_5+(-0.25)*(as.numeric(D$prev_dep)-1)+(0.11)*D$prev_sdq+
+  D$r_NAPLAN <- as.numeric(runif(3600,0,1)<inv.logit(-22.8+1.77*D$age+0.01*D$sex+(-0.70)*D$NAPLAN_w1+
+                                                         (0.7)*D$wave+(-4.9)*D$ses_2+(-1.9)*D$ses_3+(2.19)*D$ses_4+
+                                                         (-2.35)*D$ses_5+(-0.25)*(as.numeric(D$prev_dep)-1)+(0.11)*D$prev_sdq+
                                                        D$L3_RE_r_NAPLAN+D$L2_RE_r_NAPLAN))
 
   D$r_NAPLAN <- as.factor(D$r_NAPLAN)
@@ -264,15 +255,15 @@ sd_sdqL1 <- 3.0
   D_wide <- reshape(D,v.names=c("NAPLAN","prev_sdq","prev_dep"),timevar = "wave",idvar="c_id",direction= "wide")
   
   #Missing values in NAPLAN- 15% of NAPLAN at wave 1 data missing 
-  D_wide$r_NAPLANW1 <- as.numeric(runif(1200,0,1)<inv.logit(-2.1+0.05*D_wide$c_age+0.02*D_wide$c_sex))
+  D_wide$r_NAPLANW1 <- as.numeric(runif(1200,0,1)<inv.logit(-2.1+0.05*D_wide$age+0.02*D_wide$sex))
   
   
   #Missing values in SES- 10% of SES missing 
-  D_wide$r_SES <- as.numeric(runif(1200,0,1)<inv.logit(-2.5+0.03*D_wide$c_age+0.01*D_wide$c_sex))
+  D_wide$r_SES <- as.numeric(runif(1200,0,1)<inv.logit(-2.5+0.03*D_wide$age+0.01*D_wide$sex))
   
   
   #assign NA values 
-  D_wide$c_ses <- ifelse(D_wide$r_SES==1,NA,D_wide$c_ses)
+  D_wide$ses <- ifelse(D_wide$r_SES==1,NA,D_wide$ses)
   D_wide$NAPLAN_w1 <- ifelse(D_wide$r_NAPLANW1==1,NA,D_wide$NAPLAN_w1)
   
   
@@ -293,9 +284,8 @@ sd_sdqL1 <- 3.0
   
   #rename NAPLAN score to a generic name
   
-  D <- dplyr::rename(D, numeracy_score="NAPLAN",numeracy_scoreW1="NAPLAN_w1")
-  
-  
+  D <- dplyr::rename(D, numeracy_score="NAPLAN",numeracy_scoreW1="NAPLAN_w1",id="c_id")
+  D <- D %>% select(!contains("es_"))
 #Save the data set
   
   write.csv(D, "CATS_dataL.csv", row.names = F)
