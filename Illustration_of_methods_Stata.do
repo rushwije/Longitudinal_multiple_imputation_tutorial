@@ -10,10 +10,7 @@ version 18.0
 clear all
 set more off
 
-*cd "your_working_directory_path"
-
-cd "C:\Users\rushani.wijesuriya\OneDrive - Murdoch Children's Research Institute\Multilevel MI- Tutorial paper\Longitudinal_Tutorial"
-
+cd "your_working_directory_path"
 
 import delimited using CATS_dataL.csv,numericcols(5,6,8,9) clear
 
@@ -32,8 +29,6 @@ reshape long prev_dep numeracy_score prev_sdq, i(id) j(time)
 /*------------------------------------------------------------------------------
  Illustration of MI approaches for longitudinal data 
 -------------------------------------------------------------------------------*/
-
-timer on 1
 
 *****************1. JM-1L-wide***********
 
@@ -87,14 +82,8 @@ mi reshape long prev_dep numeracy_score prev_sdq, i(id) j(time)
 mi xtset id
 mi estimate: xtmixed numeracy_score i.prev_dep time numeracy_scorew1 age i.sex ses || id:
 
-timer off 1
-
-
 ******************1. JM-1L-wide using continous calibartion for categorical variables **********
-
-
 clear all
-
 
 import delimited using CATS_dataL.csv,numericcols(5,6,8,9) clear
 
@@ -103,8 +92,6 @@ recode prev_dep (2=1) (1=0)
 
 *Step 1: Change data to wide format
 reshape wide prev_dep numeracy_score prev_sdq, i(id) j(time)
-
-
 
 *Missing indicator
  gen missing=1 if ses==.
@@ -211,7 +198,7 @@ mi impute mvn prev_dep3 prev_dep5 prev_dep7 numeracy_score3 numeracy_score5 nume
 	matrix p_cal[1,5] = `p5_cal'
 
 
-* (i) Round binary varaiables using adaptive rounding 
+* (ii) Round binary varaiables using adaptive rounding 
 foreach var of varlist prev_dep* {
 	sum `var' if _mi_m==0
 	local omegabar  = `r(mean)'
@@ -220,10 +207,10 @@ foreach var of varlist prev_dep* {
 	replace `var' = 1 if `var' > `threshold' & _mi_m!=0
 	}
 
-* (ii) Reshape to long
+* (iii) Reshape to long
 mi reshape long prev_dep numeracy_score prev_sdq, i(id) j(time)
 
-* (iii) Fit  analysis model to each of the mi datasets
+* (iv) Fit  analysis model to each of the mi datasets
 mi xtset id
 mi estimate: xtmixed numeracy_score i.prev_dep time numeracy_scorew1 age i.sex ses_cal || id:
 
