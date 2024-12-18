@@ -396,6 +396,9 @@ testEstimates(fit.imp5, extra.pars = TRUE)
 # Approach 6: FCS-2L-DI       #
 #-----------------------------#
 
+## IN THIS  SPECIFIC EXAMPLE, THE CODE RETURNS AN ERROR DUE TO LARGE NUMBER OF DUMMY INDICATORS. 
+## ONLY PROVIDED FOR ILLUSTRATIVE PURPOSES
+
 # Set categorical and binary variables to impute as factors
 cat.vars <- c("ses", "prev_dep", "school")
 CATS_long[cat.vars] = lapply(CATS_long[cat.vars], factor)
