@@ -34,7 +34,7 @@ lmer(numeracy_score ~ prev_dep + time + age + numeracy_scoreW1 + sex +
 
 # 3-level
 lmer(numeracy_score ~ prev_dep + time + age + numeracy_scoreW1 + sex +
-    factor(ses) + (1 | id), data = CATS_long)
+    factor(ses) + (1 |school/ id), data = CATS_long)
 
 ###------------------------------------Illustration of the reshape() function--------------------------------------------
 
